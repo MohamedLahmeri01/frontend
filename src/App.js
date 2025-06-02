@@ -1,789 +1,563 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AiViScan - Convert Document Images to DOCX with AI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-hover: #5855eb;
-            --secondary: #06b6d4;
-            --accent: #10b981;
-            --dark: #1e293b;
-            --gray: #64748b;
-            --light-gray: #f8fafc;
-            --white: #ffffff;
-            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: var(--dark);
-            overflow-x: hidden;
-        }
-
-        /* Animated Background */
-        .bg-animated {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--gradient);
-            z-index: -2;
-        }
-
-        .bg-animated::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
-            animation: gradientShift 15s ease infinite;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.1) rotate(180deg); }
-        }
-
-        /* Header */
-        header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-
-        nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--dark);
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .cta-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow);
-        }
-
-        .cta-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding: 6rem 2rem 2rem;
-            position: relative;
-        }
-
-        .hero-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-        }
-
-        .hero-content h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, var(--dark), var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-content p {
-            font-size: 1.25rem;
-            color: var(--gray);
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: white;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.9);
-            color: var(--dark);
-            padding: 1rem 2rem;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary:hover, .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .hero-visual {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .phone-mockup {
-            width: 300px;
-            height: 600px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 30px;
-            padding: 20px;
-            box-shadow: var(--shadow-lg);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .phone-screen {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            position: relative;
-        }
-
-        .demo-icon {
-            font-size: 4rem;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .floating-elements {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .floating-element {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            animation: floatAround 20s infinite linear;
-        }
-
-        .floating-element:nth-child(1) {
-            width: 80px;
-            height: 80px;
-            top: 20%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-
-        .floating-element:nth-child(2) {
-            width: 60px;
-            height: 60px;
-            top: 60%;
-            right: 10%;
-            animation-delay: -7s;
-        }
-
-        .floating-element:nth-child(3) {
-            width: 40px;
-            height: 40px;
-            top: 80%;
-            left: 20%;
-            animation-delay: -14s;
-        }
-
-        @keyframes floatAround {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(120deg); }
-            66% { transform: translate(-20px, 20px) rotate(240deg); }
-            100% { transform: translate(0, 0) rotate(360deg); }
-        }
-
-        /* Features Section */
-        .features {
-            padding: 6rem 2rem;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(20px);
-            position: relative;
-            z-index: 1;
-        }
-
-        .features-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 4rem;
-        }
-
-        .section-header h2 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--dark), var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .section-header p {
-            font-size: 1.1rem;
-            color: var(--gray);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .feature-card h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--dark);
-        }
-
-        .feature-card p {
-            color: var(--gray);
-            line-height: 1.6;
-        }
-
-        /* How It Works */
-        .how-it-works {
-            padding: 6rem 2rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .steps-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .steps-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .step-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            padding: 2rem;
-            text-align: center;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .step-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .step-number {
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 30px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-        }
-
-        .step-icon {
-            font-size: 2.5rem;
-            margin: 1rem 0;
-            display: block;
-        }
-
-        /* CTA Section */
-        .cta-section {
-            padding: 6rem 2rem;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .cta-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .cta-section h2 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--dark), var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .cta-section p {
-            font-size: 1.1rem;
-            color: var(--gray);
-            margin-bottom: 2rem;
-        }
-
-        .features-list {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 2rem;
-            margin: 2rem 0;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--accent);
-            font-weight: 500;
-        }
-
-        /* Footer */
-        footer {
-            background: rgba(30, 41, 59, 0.95);
-            backdrop-filter: blur(20px);
-            color: white;
-            padding: 3rem 2rem 1rem;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .footer-links a:hover {
-            color: var(--primary);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .hero-container {
-                grid-template-columns: 1fr;
-                text-align: center;
-                gap: 2rem;
-            }
-
-            .hero-content h1 {
-                font-size: 2.5rem;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .phone-mockup {
-                width: 250px;
-                height: 500px;
-            }
-
-            .hero-buttons {
-                justify-content: center;
-            }
-
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .steps-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .hero {
-                padding: 5rem 1rem 1rem;
-            }
-
-            .hero-content h1 {
-                font-size: 2rem;
-            }
-
-            .btn-primary, .btn-secondary {
-                padding: 0.75rem 1.5rem;
-                font-size: 1rem;
-            }
-
-            .section-header h2 {
-                font-size: 2rem;
-            }
-
-            .cta-section h2 {
-                font-size: 2rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="bg-animated"></div>
-    <div class="floating-elements">
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
-    </div>
-
-    <header>
-        <nav>
-            <div class="logo">✨ AiViScan</div>
-            <ul class="nav-links">
-                <li><a href="#features">Features</a></li>
-                <li><a href="#how-it-works">How It Works</a></li>
-                <li><a href="#pricing">Pricing</a></li>
-            </ul>
-            <a href="#" class="cta-btn" onclick="scrollToApp()">🚀 Try Now</a>
-        </nav>
-    </header>
-
-    <section class="hero">
-        <div class="hero-container">
-            <div class="hero-content">
-                <h1>Transform Documents with AI-Powered OCR</h1>
-                <p>Convert any document image to editable DOCX files in seconds. Our advanced OCR technology ensures 99% accuracy with support for multiple languages and formats.</p>
-                <div class="hero-buttons">
-                    <a href="#" class="btn-primary" onclick="scrollToApp()">
-                        <span>✨</span> Start Converting
-                    </a>
-                    <a href="#how-it-works" class="btn-secondary">
-                        <span>📖</span> Learn More
-                    </a>
-                </div>
+import { useState, useRef, useCallback, useEffect } from "react";
+import axios from "axios";
+import { saveAs } from "file-saver";
+import { Document, Packer, Paragraph } from "docx";
+import { initializeApp } from "firebase/app";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import "./App.css";
+
+const firebaseConfig = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+};
+
+initializeApp(firebaseConfig);
+const auth = getAuth();
+const db = getFirestore();
+const provider = new GoogleAuthProvider();
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [ocrCount, setOcrCount] = useState(0);
+  const [previewImage, setPreviewImage] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [text, setText] = useState("");
+  const [correctedText, setCorrectedText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+        checkUserOcrCount(user.uid);
+      } else {
+        setUser(null);
+        setOcrCount(0);
+        // Clean up when user signs out
+        stopCamera();
+        setPreviewImage("");
+        setImageFile(null);
+        setCorrectedText("");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Clean up camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
+  const checkUserOcrCount = useCallback(async (userId) => {
+    try {
+      const userDoc = doc(db, "users", userId);
+      const docSnap = await getDoc(userDoc);
+      if (docSnap.exists()) {
+        setOcrCount(docSnap.data().ocrCount || 0);
+      } else {
+        await setDoc(userDoc, { ocrCount: 0, createdAt: new Date() });
+        setOcrCount(0);
+      }
+    } catch (error) {
+      console.error("Error checking OCR count:", error);
+    }
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      setLoading(true);
+      const result = await signInWithPopup(auth, provider);
+      // Auth state change will be handled by the useEffect listener
+    } catch (error) {
+      console.error("Error signing in:", error);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        alert("Failed to sign in. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      await auth.signOut();
+      // Auth state change will be handled by the useEffect listener
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  }, []);
+
+  const incrementOcrCount = useCallback(async () => {
+    if (!user) return;
+    try {
+      const userDoc = doc(db, "users", user.uid);
+      const newCount = ocrCount + 1;
+      await updateDoc(userDoc, { 
+        ocrCount: newCount,
+        lastUsed: new Date()
+      });
+      setOcrCount(newCount);
+    } catch (error) {
+      console.error("Error updating OCR count:", error);
+    }
+  }, [user, ocrCount]);
+
+  const startCamera = async () => {
+    try {
+      setCameraError("");
+      // Stop existing stream first
+      if (cameraStream) {
+        stopCamera();
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'environment' // Use back camera on mobile
+        } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setCameraStream(stream);
+        
+        // Wait for video to load
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play();
+        };
+      }
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      let errorMessage = "Camera access failed. ";
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage += "Please allow camera permissions and try again.";
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += "No camera found on this device.";
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage += "Camera is not supported in this browser.";
+      } else {
+        errorMessage += "Please check your camera and try again.";
+      }
+      
+      setCameraError(errorMessage);
+    }
+  };
+
+  const stopCamera = useCallback(() => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraError("");
+  }, [cameraStream]);
+
+  const captureImage = () => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    
+    if (!canvas || !video || !cameraStream) {
+      alert("Camera not ready. Please start the camera first.");
+      return;
+    }
+
+    try {
+      const context = canvas.getContext("2d");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const imageURL = canvas.toDataURL("image/jpeg", 0.8); // Use JPEG for smaller file size
+      setPreviewImage(imageURL);
+      stopCamera();
+
+      // Convert to file
+      fetch(imageURL)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], `captured_${Date.now()}.jpg`, { type: "image/jpeg" });
+          setImageFile(file);
+        })
+        .catch(error => {
+          console.error("Error creating file from capture:", error);
+          alert("Failed to capture image. Please try again.");
+        });
+    } catch (error) {
+      console.error("Error capturing image:", error);
+      alert("Failed to capture image. Please try again.");
+    }
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert("Please select a valid image file.");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size too large. Please select an image smaller than 10MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.src = reader.result;
+      img.onload = () => {
+        // Optimize image size
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 800;
+
+        let { width, height } = img;
+
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = (height * MAX_WIDTH) / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = (width * MAX_HEIGHT) / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const resizedDataURL = canvas.toDataURL("image/jpeg", 0.8);
+        setPreviewImage(resizedDataURL);
+
+        canvas.toBlob((blob) => {
+          const resizedFile = new File([blob], file.name, { type: "image/jpeg" });
+          setImageFile(resizedFile);
+        }, "image/jpeg", 0.8);
+      };
+      img.onerror = () => {
+        alert("Failed to load image. Please try a different file.");
+      };
+    };
+    reader.onerror = () => {
+      alert("Failed to read file. Please try again.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
+    
+    if (!user) {
+      alert("Please sign in first to extract text.");
+      return;
+    }
+    
+    if (ocrCount >= 3) {
+      setShowLimitModal(true);
+      return;
+    }
+    
+    if (!imageFile) {
+      alert("Please select or capture an image first.");
+      return;
+    }
+    
+    setLoading(true);
+    setIsProcessing(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append("Session", "string");
+      formData.append("image", imageFile);
+
+      const options = {
+        method: "POST",
+        url: "https://render-backend-18fh.onrender.com/api/ocr",
+        // url: "http://localhost:5000/api/ocr", // Uncomment for local development
+        data: formData,
+        timeout: 60000, // 60 second timeout
+      };
+
+      const response = await axios.request(options);
+      console.log("🟢 API Response:", response.data);
+      
+      const extractedText = response.data.text || response.data.extractedText || "";
+      if (extractedText.trim()) {
+        setCorrectedText(extractedText);
+        await incrementOcrCount();
+      } else {
+        setCorrectedText("No text found in the image. Please try with a clearer image.");
+      }
+    } catch (error) {
+      console.error("Error extracting text:", error);
+      let errorMessage = "Failed to extract text. ";
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage += "Request timed out. Please try again.";
+      } else if (error.response?.status === 413) {
+        errorMessage += "Image file too large. Please use a smaller image.";
+      } else if (error.response?.status >= 500) {
+        errorMessage += "Server error. Please try again later.";
+      } else {
+        errorMessage += "Please check your connection and try again.";
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const downloadAsDocx = async () => {
+    if (!correctedText.trim()) {
+      alert("No text to download. Please extract text first.");
+      return;
+    }
+
+    try {
+      const doc = new Document({
+        sections: [{
+          children: [
+            new Paragraph({
+              text: correctedText,
+              spacing: { line: 360 } // 1.5 line spacing
+            })
+          ]
+        }]
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const fileName = `extracted_text_${new Date().toISOString().split('T')[0]}.docx`;
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error("Error creating document:", error);
+      alert("Failed to create document. Please try again.");
+    }
+  };
+
+  const clearImage = () => {
+    setPreviewImage("");
+    setImageFile(null);
+    setCorrectedText("");
+    stopCamera();
+  };
+
+  const getRemainingCredits = () => 3 - ocrCount;
+
+  const getCreditStatus = () => {
+    const remaining = getRemainingCredits();
+    if (remaining <= 0) return 'danger';
+    if (remaining === 1) return 'warning';
+    return 'success';
+  };
+
+  return (
+    <div className="App">
+      <nav className="navbar">
+        <div className="navbar-left">
+          <h1 className="logo">✨ AiViScan</h1>
+          {user && (
+            <div className="camera-controls">
+              {!cameraStream ? (
+                <button 
+                  onClick={startCamera} 
+                  className="btn-primary"
+                  disabled={loading}
+                >
+                  📷 Start Camera
+                </button>
+              ) : (
+                <>
+                  <button 
+                    onClick={captureImage} 
+                    className="btn-success"
+                    disabled={loading}
+                  >
+                    📸 Capture
+                  </button>
+                  <button 
+                    onClick={stopCamera} 
+                    className="btn-danger"
+                    disabled={loading}
+                  >
+                    ⏹️ Stop
+                  </button>
+                </>
+              )}
             </div>
-            <div class="hero-visual">
-                <div class="phone-mockup">
-                    <div class="phone-screen">
-                        <div class="demo-icon">📄</div>
-                        <p style="color: #64748b; font-size: 0.9rem; text-align: center;">Upload → AI Process → Download DOCX</p>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <div style="width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: pulse 1s infinite;"></div>
-                            <div style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: pulse 1s infinite 0.2s;"></div>
-                            <div style="width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; animation: pulse 1s infinite 0.4s;"></div>
-                        </div>
+          )}
+        </div>
+        <div className="navbar-right">
+          {user ? (
+            <div className="user-info">
+              <div className={`status-indicator status-${getCreditStatus()}`}>
+                ⚡ Credits: {getRemainingCredits()}/3
+              </div>
+              <button 
+                className="signout-btn" 
+                onClick={signOut}
+                disabled={loading}
+              >
+                👋 Sign Out
+              </button>
+            </div>
+          ) : (
+            <button 
+              className="signin-btn" 
+              onClick={signInWithGoogle}
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "🚀 Sign In with Google"}
+            </button>
+          )}
+        </div>
+      </nav>
+
+      <div className="main-container">
+        <div className="left-pane">
+          {!previewImage ? (
+            <div className={`camera-section ${cameraStream ? 'active' : ''}`}>
+              {cameraStream ? (
+                <>
+                  <video ref={videoRef} autoPlay className="camera-preview" />
+                  <canvas ref={canvasRef} className="hidden" />
+                </>
+              ) : (
+                <div className="camera-placeholder">
+                  <div className="icon">📷</div>
+                  <p>Click "Start Camera" to begin</p>
+                  <p>or upload an image below</p>
+                  {cameraError && (
+                    <div style={{ color: 'var(--danger-color)', marginTop: '1rem', fontSize: '0.875rem' }}>
+                      {cameraError}
                     </div>
+                  )}
                 </div>
+              )}
             </div>
+          ) : (
+            <div className="image-preview">
+              <img src={previewImage} alt="Selected for OCR" />
+              <button className="clear-btn" onClick={clearImage} title="Clear image">
+                ✕
+              </button>
+            </div>
+          )}
+          
+          <div className="upload-section">
+            <label className="file-upload-btn">
+              📁 Upload Image
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="file-input"
+                disabled={loading}
+              />
+            </label>
+          </div>
         </div>
-    </section>
 
-    <section class="features" id="features">
-        <div class="features-container">
-            <div class="section-header">
-                <h2>Why Choose AiViScan?</h2>
-                <p>Experience the power of cutting-edge OCR technology designed for professionals and businesses who demand accuracy and efficiency.</p>
+        <div className="right-pane">
+          <div className="text-header">
+            <h2>🔍 Extracted Text</h2>
+            <button 
+              onClick={downloadAsDocx}
+              className="download-btn"
+              disabled={!correctedText.trim() || loading}
+            >
+              ⬇️ Download DOCX
+            </button>
+          </div>
+          
+          <textarea
+            value={correctedText}
+            onChange={(e) => setCorrectedText(e.target.value)}
+            placeholder="Extracted text will appear here... You can edit it before downloading."
+            className="text-editor"
+            disabled={loading}
+          />
+          
+          <button 
+            onClick={handleFormSubmit}
+            disabled={loading || !imageFile || !user}
+            className={`process-btn ${isProcessing ? 'loading' : ''}`}
+          >
+            {isProcessing ? "🔄 Processing..." : "✨ Extract Text"}
+          </button>
+          
+          {!user && (
+            <div style={{ 
+              padding: '1rem', 
+              background: 'rgba(99, 102, 241, 0.1)', 
+              borderRadius: 'var(--radius-lg)', 
+              border: '1px solid rgba(99, 102, 241, 0.2)',
+              textAlign: 'center',
+              color: 'var(--primary-color)',
+              fontSize: '0.875rem'
+            }}>
+              👆 Please sign in to extract text from images
             </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <span class="feature-icon">🤖</span>
-                    <h3>AI-Powered Recognition</h3>
-                    <p>Advanced machine learning algorithms ensure 99%+ accuracy in text recognition, even with complex layouts and fonts.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">⚡</span>
-                    <h3>Lightning Fast</h3>
-                    <p>Convert documents in seconds, not minutes. Our optimized processing pipeline handles large files with ease.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">🌍</span>
-                    <h3>Multi-Language Support</h3>
-                    <p>Supports 50+ languages including English, Arabic, French, Spanish, Chinese, and many more.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">📱</span>
-                    <h3>Camera Integration</h3>
-                    <p>Capture documents directly with your device camera or upload existing images - both work perfectly.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">🔒</span>
-                    <h3>Secure & Private</h3>
-                    <p>Your documents are processed securely with Google authentication and automatic cleanup of processed files.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">📝</span>
-                    <h3>Editable Output</h3>
-                    <p>Get perfectly formatted DOCX files that you can edit, format, and share immediately after conversion.</p>
-                </div>
-            </div>
+          )}
         </div>
-    </section>
+      </div>
 
-    <section class="how-it-works" id="how-it-works">
-        <div class="steps-container">
-            <div class="section-header">
-                <h2>How It Works</h2>
-                <p>Transform your documents in just three simple steps. No technical knowledge required.</p>
-            </div>
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-number">1</div>
-                    <span class="step-icon">📷</span>
-                    <h3>Capture or Upload</h3>
-                    <p>Take a photo with your camera or upload an existing image of your document. We support JPG, PNG, and other common formats.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">2</div>
-                    <span class="step-icon">🔄</span>
-                    <h3>AI Processing</h3>
-                    <p>Our advanced OCR engine analyzes your document, recognizes text with high accuracy, and maintains formatting structure.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">3</div>
-                    <span class="step-icon">⬇️</span>
-                    <h3>Download DOCX</h3>
-                    <p>Review and edit the extracted text, then download your perfectly formatted DOCX file ready for use in any word processor.</p>
-                </div>
-            </div>
+      {showLimitModal && (
+        <div className="limit-modal">
+          <div className="modal-content">
+            <h3>🎯 Upgrade Required</h3>
+            <p>You've reached your free limit of 3 extractions. Contact us to upgrade your account and get unlimited access!</p>
+            <a 
+              href="mailto:lahmerimohamedamine29@gmail.com?subject=AiViScan%20Upgrade%20Request&body=Hi,%0D%0A%0D%0AI%20would%20like%20to%20upgrade%20my%20AiViScan%20account%20for%20unlimited%20text%20extraction.%0D%0A%0D%0AMy%20account%20email:%20[YOUR_EMAIL]%0D%0A%0D%0AThank%20you!" 
+              className="email-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              📧 Contact Support
+            </a>
+            <button 
+              onClick={() => setShowLimitModal(false)}
+              className="close-btn"
+            >
+              Close
+            </button>
+          </div>
         </div>
-    </section>
+      )}
+    </div>
+  );
+}
 
-    <section class="cta-section" id="pricing">
-        <div class="cta-container">
-            <h2>Ready to Transform Your Workflow?</h2>
-            <p>Join thousands of professionals who trust AiViScan for their document conversion needs.</p>
-            
-            <div class="features-list">
-                <div class="feature-item">
-                    <span>✅</span> 3 Free Conversions
-                </div>
-                <div class="feature-item">
-                    <span>✅</span> No Credit Card Required
-                </div>
-                <div class="feature-item">
-                    <span>✅</span> Instant Results
-                </div>
-                <div class="feature-item">
-                    <span>✅</span> Premium Accuracy
-                </div>
-            </div>
-
-            <div style="margin-top: 2rem;">
-                <a href="#" class="btn-primary" onclick="scrollToApp()" style="font-size: 1.2rem; padding: 1.25rem 2.5rem;">
-                    <span>🚀</span> Start Converting Documents Now
-                </a>
-            </div>
-            
-            <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--gray);">
-                Need more conversions? <a href="mailto:lahmerimohamedamine29@gmail.com?subject=AiViScan%20Upgrade%20Request" style="color: var(--primary); text-decoration: none;">Contact us for unlimited access</a>
-            </p>
-        </div>
-    </section>
-
-    <footer>
-        <div class="footer-content">
-            <div class="footer-links">
-                <a href="#features">Features</a>
-                <a href="#how-it-works">How It Works</a>
-                <a href="mailto:lahmerimohamedamine29@gmail.com">Support</a>
-                <a href="#">Privacy Policy</a>
-            </div>
-            <p>&copy; 2024 AiViScan. Transforming documents with AI technology.</p>
-        </div>
-    </footer>
-
-    <style>
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    </style>
-
-    <script>
-        function scrollToApp() {
-            // This function will scroll to your main app section
-            // You can modify this to redirect to your app page or show the app
-            alert('Redirecting to the AiViScan app...');
-            // Example: window.location.href = '/app';
-        }
-
-        // Smooth scrolling for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Header background change on scroll
-        window.addEventListener('scroll', () => {
-            const header = document.querySelector('header');
-            if (window.scrollY > 100) {
-                header.style.background = 'rgba(255, 255, 255, 0.98)';
-            } else {
-                header.style.background = 'rgba(255, 255, 255, 0.95)';
-            }
-        });
-    </script>
-</body>
-</html>
+export default App;
